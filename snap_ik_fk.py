@@ -2,6 +2,7 @@ from .snapping_utils import *
 from .driver_utils import split_path
 from .insert_keyframe import insert_keyframe
 
+
 def snap_ik_fk(rig,way,switch_prop,
                     FK_root,FK_tip,
                     IK_last,IK_tip,IK_pole,
@@ -16,71 +17,48 @@ def snap_ik_fk(rig,way,switch_prop,
     poseBone = rig.pose.bones
     dataBone = rig.data.bones
 
-    print('######### FK mid',FK_mid)
-
     switch_bone,switch_prop_name = split_path(switch_prop)
-
-    if not FK_mid :
-        print('no fk mid')
-        FK_mid = [poseBone.get(b.name) for b in IKFK_chain.FK_mid]
-
-    IK_mid_chain = IK_last.parent_recursive
-    IK_root = IK_mid_chain[len(FK_mid)-1]
-    IK_mid= IK_mid_chain[:len(FK_mid)-1]
-
-    IK_mid.reverse()
-    IK_mid.append(IK_last)
 
     for c in IK_last.constraints :
         if c.type == 'IK':
             ik_len = c.chain_count
             break
 
-    IK_match = IK_mid_chain[ik_len-2]
+    if not FK_mid :
+        FK_mid = FK_tip.parent_recursive[:ik_len-1].reverse()
 
-    fk_chain = [FK_root]+FK_mid
-    fk_chain.reverse()
-    FK_match = fk_chain[ik_len-1]
+    IK_chain = ([IK_last]+IK_last.parent_recursive[:ik_len-1])[::-1]
+    IK_root = IK_chain[0]
+    FK_chain = ([FK_root]+FK_mid)[-ik_len:]
 
     if IK_stretch_last :
-        IK_stretch_chain = [IK_stretch_last]+IK_stretch_last.parent_recursive
-        IK_stretch_chain = IK_stretch_chain[:ik_len]
-        IK_stretch_chain.reverse()
+        IK_stretch_chain = ([IK_stretch_last]+IK_stretch_last.parent_recursive[:ik_len-1])[::-1]
+        print('#### IK_stretch_chain',[b.name for b in IK_stretch_chain])
+        print('')
 
-        print(IK_stretch_chain)
+
+    print('#### IK_chain',[b.name for b in IK_chain])
+    #print(IK_stretch_chain)
+    print('')
+    print('#### FK_chain',[b.name for b in FK_chain])
 
     #######FK2IK
     if way == 'to_FK' :
-        if IK_stretch_last :
-            FK_root.matrix = IK_stretch_chain[0].matrix
-        else :
-            FK_root.matrix = IK_root.matrix
-
-        FK_root.scale[0],FK_root.scale[2] =1,1
-        FK_root.location = (0,0,0)
-        bpy.ops.pose.visual_transform_apply()
-
-        for i,fk_bone in enumerate(FK_mid) :
+        for i,FK_bone in enumerate(FK_chain) :
             if IK_stretch_last :
-                fk_bone.matrix = IK_stretch_chain[i+1].matrix
+                match_bone = IK_stretch_chain[i]
             else :
-                fk_bone.matrix = IK_mid[i].matrix
+                match_bone = IK_chain[i]
 
-            fk_bone.scale[0],fk_bone.scale[2] =1,1
-            fk_bone.location = (0,0,0)
-            bpy.ops.pose.visual_transform_apply()
+            match_matrix(FK_bone,match_bone)
+            print('match',FK_bone,'to',match_bone)
 
-        if IK_stretch_last :
-            FK_tip.matrix = IK_stretch_last.matrix
-        else :
-            FK_tip.matrix = IK_tip.matrix
-        FK_tip.scale[0],FK_tip.scale[2] =1,1
+        FK_tip.matrix = IK_tip.matrix
         FK_tip.location = (0,0,0)
         bpy.ops.pose.visual_transform_apply()
-
         #Rigify support
         if FK_root.get('stretch_length'):
-            FK_root['stretch_length'] = IK_mid.length/IK_mid.bone.length
+            FK_root['stretch_length'] = IK_root.length/IK_root.bone.length
 
         invert_switch = invert*1.0
 
@@ -89,6 +67,7 @@ def snap_ik_fk(rig,way,switch_prop,
             layer_show = ik_fk_layer[0]
 
         dataBone.active = FK_root.bone
+
 
     #######IK2FK
     elif way == 'to_IK' :
@@ -101,18 +80,8 @@ def snap_ik_fk(rig,way,switch_prop,
         bpy.ops.pose.visual_transform_apply()
 
         if full_snapping :
-            IK_root.matrix = FK_root.matrix
-            IK_root.scale[0],IK_root.scale[2] = 1,1
-            IK_root.location = (0,0,0)
-            bpy.ops.pose.visual_transform_apply()
-
-            for i,ik_bone in enumerate(IK_mid):
-                print('full snapping')
-                ik_bone.matrix = FK_mid[i].matrix
-                ik_bone.scale[0],ik_bone.scale[2] = 1,1
-                #ik_bone.scale[1] = FK_mid[i].length/ik_bone.length
-                ik_bone.location = (0,0,0)
-                bpy.ops.pose.visual_transform_apply()
+            for i,IK_bone in enumerate(IK_chain) :
+                match_matrix(IK_bone,FK_chain[i])
 
         for c in IK_last.constraints :
             if c.type == 'IK' :
@@ -120,7 +89,7 @@ def snap_ik_fk(rig,way,switch_prop,
         bpy.ops.pose.visual_transform_apply()
 
         #else :
-        match_pole_target(IK_match,IK_last,IK_pole,FK_match,(IK_root.length+IK_last.length))
+        match_pole_target(IK_chain[1],IK_last,IK_pole,FK_chain[1],(IK_root.length+IK_last.length))
         bpy.ops.pose.visual_transform_apply()
 
 

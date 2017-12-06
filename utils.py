@@ -1,5 +1,6 @@
 import bpy
 
+
 def find_mirror(name) :
     mirror = None
     prop= False

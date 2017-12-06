@@ -6,6 +6,13 @@ from math import acos, pi
 ## Math utility functions ##
 ############################
 
+
+def match_matrix(bone_1,bone_2):
+    bone_1.matrix = bone_2.matrix
+    bone_1.scale[0],bone_1.scale[2] =1,1
+    bone_1.location = (0,0,0)
+    bpy.ops.pose.visual_transform_apply()
+
 def perpendicular_vector(v):
     """ Returns a vector that is perpendicular to the one given.
         The returned vector is _not_ guaranteed to be normalized.
