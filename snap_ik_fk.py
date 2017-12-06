@@ -89,7 +89,7 @@ def snap_ik_fk(rig,way,switch_prop,
         bpy.ops.pose.visual_transform_apply()
 
         #else :
-        match_pole_target(IK_chain[1],IK_last,IK_pole,FK_chain[1],(IK_root.length+IK_last.length))
+        match_pole_target(IK_chain[0],IK_last,IK_pole,FK_chain[0],(IK_root.length+IK_last.length))
         bpy.ops.pose.visual_transform_apply()
 
 
