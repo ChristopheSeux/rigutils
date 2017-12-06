@@ -5,6 +5,7 @@ from .insert_keyframe import insert_keyframe
 def snap_ik_fk(rig,way,switch_prop,
                     FK_root,FK_tip,
                     IK_last,IK_tip,IK_pole,
+                    IK_stretch_last = None,
                     FK_mid=None,
                     full_snapping=True,
                     invert=False,
@@ -41,20 +42,38 @@ def snap_ik_fk(rig,way,switch_prop,
     fk_chain.reverse()
     FK_match = fk_chain[ik_len-1]
 
+    if IK_stretch_last :
+        IK_stretch_chain = [IK_stretch_last]+IK_stretch_last.parent_recursive
+        IK_stretch_chain = IK_stretch_chain[:ik_len]
+        IK_stretch_chain.reverse()
+
+        print(IK_stretch_chain)
+
     #######FK2IK
     if way == 'to_FK' :
-        FK_root.matrix = IK_root.matrix
+        if IK_stretch_last :
+            FK_root.matrix = IK_stretch_chain[0].matrix
+        else :
+            FK_root.matrix = IK_root.matrix
+
         FK_root.scale[0],FK_root.scale[2] =1,1
         FK_root.location = (0,0,0)
         bpy.ops.pose.visual_transform_apply()
 
         for i,fk_bone in enumerate(FK_mid) :
-            fk_bone.matrix = IK_mid[i].matrix
+            if IK_stretch_last :
+                fk_bone.matrix = IK_stretch_chain[i+1].matrix
+            else :
+                fk_bone.matrix = IK_mid[i].matrix
+
             fk_bone.scale[0],fk_bone.scale[2] =1,1
             fk_bone.location = (0,0,0)
             bpy.ops.pose.visual_transform_apply()
 
-        FK_tip.matrix = IK_tip.matrix
+        if IK_stretch_last :
+            FK_tip.matrix = IK_stretch_last.matrix
+        else :
+            FK_tip.matrix = IK_tip.matrix
         FK_tip.scale[0],FK_tip.scale[2] =1,1
         FK_tip.location = (0,0,0)
         bpy.ops.pose.visual_transform_apply()
