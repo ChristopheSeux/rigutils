@@ -1,5 +1,12 @@
 import bpy
 
+def find_rig_users(rig) :
+    users = []
+    for ob in bpy.context.scene.objects :
+        if ob.find_armature()== rig or ob.parent == rig and ob not in users:
+            users.append(ob)
+
+    return ob
 
 def find_mirror(name) :
     mirror = None
