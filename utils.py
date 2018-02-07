@@ -1,5 +1,17 @@
 import bpy
 
+
+def find_root(rig):
+    for bone in rig.pose.bones :
+        if bone.name in ['CTRL-root','root','ROOT','Root'] :
+            return bone
+
+    for bone in rig.pose.bones :
+        if not bone.parent and not bone.constraints :
+            return bone
+
+
+
 def find_rig_users(rig) :
     users = []
     for ob in bpy.context.scene.objects :

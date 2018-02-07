@@ -121,5 +121,5 @@ def snap_ik_fk(rig,way,switch_prop,
             insert_keyframe(b)
         for b in FK_mid :
             insert_keyframe(b)
-        for b in IK_mid :
-            insert_keyframe(b)
+        #for b in IK_mid :
+    #        insert_keyframe(b)
